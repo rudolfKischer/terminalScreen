@@ -49,9 +49,6 @@ parser = init_parser()
 logger = init_logger()
 args = parser.parse_args()
 
-def rgb_to_ansi(r, g, b):
-    return 16 + (36 * round(r / 255 * 5)) + (6 * round(g / 255 * 5)) + round(b / 255 * 5)
-
 def rgb_to_ansi_vectorized(frame):
     # we want to convert the whole frame to its corresponding ansi color code 
     frame = frame / 255
@@ -75,90 +72,6 @@ def to_ansi_color(frame, color_mode):
     # normalize the frame
     frame = frame / 255
 
-    ansi_standard_colors = [
-        [0, 0, 0], # black
-        [128, 0, 0], # dark red
-        [0, 128, 0], # dark green
-        #[128, 128, 0], # dark yellow
-        [0, 0, 128], # dark blue
-        [128, 0, 128], # dark magenta
-        [0, 128, 128], # dark cyan
-        [220, 220, 220], # light gray
-        #[25, 25, 25], # dark gray
-        [255, 0, 0], # red
-        [50, 255, 50], # green
-        [255, 255, 0], # yellow
-        [0, 0, 255], # blue
-        [255, 0, 255], # magenta
-        [100, 255, 255], # cyan
-        [255, 255, 255], # white
-        # add orange for good measure
-        [255, 180, 0], # orange
-        [255, 95, 95], # light red
-        # peach 
-        #[255, 126, 64],
-    ]
-
-    pico_8_colors = [
-        #[0, 0, 0], # black
-        #[29, 43, 83], # dark blue
-        #[126, 37, 83], # dark purple
-        [0, 135, 81], # dark green
-        #[171, 82, 54], # brown
-        #[95, 87, 79], # dark gray
-        #[204, 235, 205], # light gray
-        #[255, 241, 232], # white
-        #[255, 0, 77], # red
-        [255, 163, 0], # orange
-        [255, 236, 39], # yellow
-        #[0, 228, 54], # green
-        [41, 173, 255], # blue
-        #[131, 118, 156], # indigo
-        [255, 119, 168], # pink
-        [255, 204, 170], # light peach
-
-        # extended colors 
-        [41, 24, 16], # dark brown black
-        #[17, 29, 53], # dark blue gray
-        #[40, 10, 120], # dark purple
-        #[18, 83, 89], # blue green 
-        #[116, 47, 41], # dark brown
-        #[73, 51, 59], # darker grey 
-        #[162, 136, 121], # light brown
-        [243, 239, 125], # light yellow
-        [190, 18, 80], # dark red 
-        [255, 108, 36], # dark orange
-        #[168, 231, 46], # lime green
-        #[0, 181, 67], # green
-        [6, 90, 181], # true blue 
-        #[117, 70, 101], # mauve
-        [255, 110, 89], # dark peach 
-        [255, 157, 129], # light peach
-
-        # additions
-        [35, 210, 140], # mint green
-        #[110, 50, 140], # purple
-        [0,152,148], # cyan
-        [0, 50, 135], # dark green
-        [255, 240, 220], #pale white
-        [40, 20, 90], # dark blue
-        [75, 20, 140], # dark purple
-        #[91, 203, 255],
-        [180,255,200], # light green
-        [50,255,120], #  lighter green
-        [46, 25, 29],
-        [120, 240, 255], # light light blue
-        #[18, 41, 79],
-        #[170, 180, 255],
-        #[171, 52, 24],
-        [167, 20, 30],
-        #[33, 85, 139],
-        #[60,190,0],
-        #[0, 85, 31], 
-        [30, 175, 0],
-        [95, 87, 79],
-    ]
-
     color_pallete_16 = [
             [0, 135, 81], # dark green
             [41, 173, 255], # blue
@@ -180,31 +93,14 @@ def to_ansi_color(frame, color_mode):
             [167, 20, 30], 
     ]
 
-    pico8_palette = [
-    (0, 0, 0),      # 0: Black
-    (29, 43, 83),   # 1: Dark Blue
-    (126, 37, 83),  # 2: Dark Purple
-    (0, 135, 81),   # 3: Dark Green
-    (171, 82, 54),  # 4: Brown
-    (95, 87, 79),   # 5: Dark Gray
-    (194, 195, 199),# 6: Light Gray
-    (255, 241, 232),# 7: White
-    (255, 0, 77),   # 8: Red
-    (255, 163, 0),  # 9: Orange
-    (255, 236, 39), # 10: Yellow
-    (0, 228, 54),   # 11: Green
-    (41, 173, 255), # 12: Blue
-    (131, 118, 156),# 13: Indigo
-    (255, 119, 168),# 14: Pink
-    (255, 204, 170) # 15: Light Peach
-    ]
+
 
     ansi_standard_colors = color_pallete_16
     #ansi_standard_colors = pico8_palette
 
     
 
-    ansi_colors = np.array(ansi_standard_colors)
+    ansi_colors = np.array(color_pallete_16)
 
     #normalize ansi 
     ansi_colors = ansi_colors / 255
@@ -232,25 +128,8 @@ def to_ansi_color(frame, color_mode):
         luminance = np.mean(frame, axis=(0, 1, 2))
 
         # if the luminance is below 0.5, then we squish the colors up
-        #if luminance < 0.5:
-        frame = frame ** p / (frame ** p + (1 - frame) ** p)
-
-        # 16 color mode
-        # we acheive this by quantizing each color channel into 2 bits
-        # then we will use a brightness bit to determine if we should use the bright or dark version of the color 
-        # we want to set the to 0 if below 128, else 1
-        #frame = np.round(frame) # this rounds colors such that they are either 0 or 1 on each channel 
-        #luminance = np.mean(frame, axis=2)
-        #luminance = np.round(luminance)
-
-        #frame = np.round(frame * 2) / 2
-
-        # now we want to have it such that if our luminance is below 0.5 on a color channel, we set 
-        # all 1 values in the color channel to 0.5
-
-        #frame[luminance < 0.5] *= 0.5 
-
-        # map to the closes ansi color 
+        if luminance < 0.5:
+            frame = frame ** p / (frame ** p + (1 - frame) ** p)
 
         color_dists = np.linalg.norm(frame[..., np.newaxis, :] - ansi_colors, axis=3)
         closest_colors = np.argmin(color_dists, axis=2)
@@ -260,9 +139,7 @@ def to_ansi_color(frame, color_mode):
 
     elif color_mode == 4:
         # convert to 6 x 6 x 6 rgb color cube
-        #frame = np.round(frame * 5) / 5 
-        pass
-
+        frame = np.round(frame * 5) / 5 
 
         
     frame = frame * 255
@@ -515,7 +392,6 @@ class TerminalScreen(threading.Thread):
                 (0, 0, 255): '\\'
         }
 
-
         char = '█'
         r, g, b = image[y, x]
         edge_color = edges[y, x]
@@ -532,23 +408,12 @@ class TerminalScreen(threading.Thread):
             if not dither_mask[y, x]:
                 char = '.'
 
-            # get the hsv value of the pixel, and if its above a certain saturation
-            # then we just set to : any ways
-
-
-
-
-
-
         if args.edgechar != None:
             if edge_color[0] == 255:
                 char = args.edgechar 
 
         if args.lines:
             char = edge_map.get(tuple(grad_color), char)
-
-        
-
 
         return char
 
@@ -648,56 +513,6 @@ class TerminalScreen(threading.Thread):
 
         self.stdscr.refresh()
 
-
-
-
-
-    def block_render(self, image, frame_number, total_frames):
-
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-
-        target_height, target_width = self.get_dimensions(image)
-        terminal_height, terminal_width = self.stdscr.getmaxyx()
-        image = cv2.resize(image, (target_width, target_height), interpolation=cv2.INTER_NEAREST)
-
-
-        fill_char = '█'
-        if self.prev_dims != (target_height, target_width):
-            self.stdscr.clear()
-            self.prev_dims = (target_height, target_width)
-
-        # convert the image to ansi color space to clip the colors for testing purposes
-        #image = rgb_to_ansi_color_vectorized(image)
-
-        # if dithing is on, do a colored dither of the image 
-        #image = ordered_color_dither(image)
-
-        image = to_ansi_color(image, args.color)
-
-
-        ansi_codes = rgb_to_ansi_vectorized(image)
-
-        # convert the ansi ansi codes 
-        #self.stdscr.addstr(0, 0, self.chr_to_ansi(fill_char, 196))
-
-        for y in range(target_height-1):
-            for x in range(target_width-1):
-                if y >= terminal_height or x >= terminal_width:
-                    continue
-                #ansi_color = rgb_to_ansi(r, g, b)
-                ansi_color = ansi_codes[y, x]
-                self.stdscr.addstr(y, x, fill_char, curses.color_pair(ansi_color))
-                # dont use any color when settin the char 
-                #self.stdscr.addstr(y, x, self.chr_to_ansi(fill_char, ansi_color))
-
-        #make the last row of pixels display progress in Red
-        progress = frame_number / total_frames
-        progress = int(progress * target_width)
-        for x in range(progress):
-            self.stdscr.addstr(target_height-1, x, fill_char, curses.color_pair(196))
-
-        self.stdscr.refresh()
-
     def get_two_way_edges(self, image, dimensions):
         # we want to be able to get a map of the inside of an edge, and an outside of an edge
         # resize image
@@ -779,17 +594,6 @@ class TerminalScreen(threading.Thread):
 
         angle = np.floor(angle * 8) / 8
 
-        #color_map = {
-        #    0: [255, 0, 0],
-        #    1/8: [255, 255, 0],
-        #    2/8: [0, 255, 0],
-        #    3/8: [0, 255, 255],
-        #    4/8: [0, 0, 255],
-        #    5/8: [255, 0, 255],
-        #    6/8: [255, 255, 255],
-        #    7/8: [100, 100, 100]
-        #}
-
         color_map = {
             0: [255, 0, 0],
             1/8: [255, 255, 0],
@@ -800,23 +604,6 @@ class TerminalScreen(threading.Thread):
             6/8: [0, 255, 0],
             7/8: [0,0,255]
         }
-
-        edge_map = {
-                (255, 0, 0): '|',
-                (255, 255, 0): '/',
-                (0, 255, 0): '-',
-                (0, 0, 255): '\\'
-        }
-
-
-        # now we want to show this as a color in the image
-        #sobel_x = cv2.convertScaleAbs(sobel_x)
-        #sobel_y = cv2.convertScaleAbs(sobel_y)
-
-        # we want to use the x as the red channel and y as the green channel
-
-
-        #grad = cv2.merge([sobel_x, sobel_y, np.zeros_like(sobel_x)])
 
         grad = np.zeros((gray.shape[0], gray.shape[1], 3), dtype=np.uint8)
 
@@ -860,279 +647,6 @@ class TerminalScreen(threading.Thread):
             return np.vstack((top, bottom))
 
 
-    def get_key_colored_image(self, resized_image):
-        # red, dark red, pink, orange, yellow, beige, 
-        key_colors = [
-                [220, 0, 0], # red
-                [170, 0, 0], # dark red
-                [200, 0, 200], # pink
-                [255, 120, 120], # light red
-                [250, 127, 0], # orange
-                [255, 100, 100], # bright orange
-                [220, 220, 50], # yellow
-                [255, 255, 0], # bright yellow
-                [120, 120, 0], # dark yellow
-                [50, 200, 50], # green
-                [20, 126, 20], # dark green
-                [126, 250, 126], # light green
-                [0, 200, 200], # cyan
-                [50, 50, 250], # blue
-                [140, 140, 255], # light blue
-                [0, 225, 225], # bright cyan
-                [126, 0, 200], # dark magenta
-                #[215, 195, 125], # beige
-                #[255, 185, 125], # beige
-                [0, 160, 160], # light blue
-                [0, 0, 0], # black
-        ]
-
-        # 16 ansi base color palette
-        key_colors = [
-                [0, 0, 0], # black
-                [128, 0, 0], # dark Red
-                [0, 128, 0], # dark green
-                [128, 128, 0], # dark yellow
-                [0, 0, 128], # dark blue 
-                [128, 0, 128], # dark magenta
-                [0, 128, 128], # dark cyan
-                #[192, 192, 192], # light gray
-                #[128, 128, 128], # dark gray
-                [255, 0, 0], # red
-                [0, 255, 0], # green
-                [255, 255, 0], # yellow
-                [0, 0, 255], # blue
-                [255, 0, 255], # magenta
-                [0, 255, 255], # cyan
-                #[255, 255, 255], # white
-                # orange we add in for good measure 
-                [255, 128, 0], # orange
-        ]
-
-        key_colors = np.array(key_colors)
-        error_threshold = 0.35
-        width, height, _ = resized_image.shape
-        min_error = np.zeros((width, height))
-        min_error.fill(255)
-        num_colors = len(key_colors)
-        new_image = np.zeros_like(resized_image)
-        for i in range(num_colors):
-            error_rgb = resized_image - key_colors[i]
-            error = error_rgb
-            error = error.astype(np.float32)
-            error /= 255
-            error = np.linalg.norm(error, axis=2)
-            mask = error < error_threshold
-            new_min_mask = error < min_error
-            min_error[new_min_mask] = error[new_min_mask]
-            new_min_mask = np.logical_and(new_min_mask, mask)
-            new_image[new_min_mask] = key_colors[i]
-
-        return new_image
-
-
-
-
-    def dithered_render(self, image, frame_number, total_frames):
-        terminal_height, terminal_width = self.stdscr.getmaxyx()
-        target_height, target_width = self.get_dimensions(image)
-        resized_image = cv2.resize(image, (target_width, target_height), interpolation=cv2.INTER_AREA)
-
-        #convert to resized image to RGB from BGR
-        resized_image = cv2.cvtColor(resized_image, cv2.COLOR_BGR2RGB)
-
-        if self.prev_dims != (target_height, target_width):
-            self.stdscr.clear()
-            self.prev_dims = (target_height, target_width)
-
-
-        
-        # dither block size 
-        k = 4
-
-
-        dither_thresholds = self.get_dither_thresholds(k)
-        #normalize
-        n = 2**int(np.ceil(np.log2(k)))
-        dither_thresholds = (dither_thresholds + 0.5) / (n**2)
-
-        edges, grad = self.get_edges(image, (target_width, target_height))
-
-        edge_map = {
-                (255, 0, 0): '|',
-                (255, 255, 0): '/',
-                (0, 255, 0): '-',
-                (0, 0, 255): '\\'
-        }
-
-
-
-        # we want to create a new image (new_hsv_image) that 
-        # is a map of colors
-        # where is the color in the original image is close to one of the key colors in hsv space, by some threshold, we want to map it to that key colo
-
-        if args.color:
-            q_image = self.get_key_colored_image(resized_image)
-        else:
-            q_image = np.zeros_like(resized_image)
-
-        gray = cv2.cvtColor(resized_image, cv2.COLOR_RGB2GRAY)
-
-
-
-        for y in range(target_height-1):
-            for x in range(target_width-1):
-                if y >= terminal_height or x >= terminal_width:
-                    continue
-                
-
-                edge_pixel = edges[y, x]
-                d_index = (y % k, x % k)
-                dither_threshold = dither_thresholds[d_index]
-
-                char = '.'
- 
-                new_color = q_image[y, x]
-
-                dither_val = gray[y, x] / 255
-                #gamme correct 
-                dither_val = dither_val ** 2.7
-
-
-                # quantize img color
-                # dither based on dither threshold
-                if np.all(new_color == 0):
-                    if dither_val > dither_threshold:
-                        new_color = (255, 255, 255)
-                        char = '.'
-                    else:
-                        new_color = (0, 0, 0)
-                        char = '.'
-                else:
-                    if dither_val > dither_threshold:
-                        char = ':'
-                    else:
-                        char = ':'
-                        #new_color = (0, 0, 0)
-
-                if dither_val > 0.8:
-                    char = ':'
-
-                if edge_pixel[0] == 255:
-                    grad_color = grad[y, x]
-                    r, g, b = grad_color
-                    char = edge_map[(r, g, b)]
-                    new_color = (255, 255, 255)
-                    #char = ':'
-
-                r, g, b = new_color
-                ansi_color = rgb_to_ansi(r, g, b)
-                self.stdscr.addch(y, x, char, curses.color_pair(ansi_color))
-
-        progress = frame_number / total_frames
-        progress = int(progress * target_width)
-        for x in range(progress):
-            self.stdscr.addch(target_height-1, x, '█', curses.color_pair(196))
-
-        self.stdscr.refresh()
-
-
-
-
-
-
-
-
-    def ascii_render(self, image, frame_number, total_frames):
-        #convert from BGR to RGB
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-
-
-        terminal_height, terminal_width = self.stdscr.getmaxyx()
-        target_height, target_width = self.get_dimensions(image)
-        resized_image = cv2.resize(image, (target_width, target_height), interpolation=cv2.INTER_AREA)
-        gradient_chars = "█●●ØBB@@&&WM#Æ%hkbqOQCJUYX{{{?+++!!!░▒█"
-        gradient_chars = gradient_chars[::-1]
-
-        #apply edge detection to original image, then resize it
-        # use the edge detection to create space
-        edges, grad = self.get_edges(image, (target_width, target_height))
-
-        two_way_edges = self.get_two_way_edges(image, (target_width, target_height))
-
-        edge_map = {
-                (255, 0, 0): '|',
-                (255, 255, 0): '/',
-                (0, 255, 0): '-',
-                (0, 0, 255): '\\'
-        }
-
-
-        if self.prev_dims != (target_height, target_width):
-            self.stdscr.clear()
-            self.prev_dims = (target_height, target_width)
-
-        for y in range(target_height-1):
-            for x in range(target_width-1):
-                if y >= terminal_height or x >= terminal_width:
-                    continue
-
-
-                pixel = resized_image[y, x]
-
-                #logger.info(f'x: {x}, y: {y}')
-                #logger.info(f'target: width: {target_width}, height: {target_height}')
-                #logger.info(f'edges: width: {edges.shape[1]}, height: {edges.shape[0]}')
-                
-                edge_pixel = edges[y, x]
-                #pixel = edge_pixel
-                edge_border_pixel = two_way_edges[y, x]
-                r, g, b = pixel
-                ansi_color = rgb_to_ansi(r, g, b)
-                if not args.color:
-                    ansi_color = rgb_to_ansi(255, 255, 255)
-                luminance = max(r, g, b)
-                gradient_index = int(luminance / 255 * len(gradient_chars))
-                gradient_index = min(gradient_index, len(gradient_chars)-1)
-                char = gradient_chars[gradient_index]
-
-
-                # where there is an edge border, we want to make it a . and no color
-                if edge_border_pixel[0] == 256:
-                    # make it blue for debugging
-                    #char = '█'
-                    char = '.'
-                    ansi_color = rgb_to_ansi(0, 0, 0)
-
-
-                if edge_pixel[0] == 255:
-                    char = '.'
-                    grad_color = grad[y, x]
-                    r, g, b = grad_color
-
-                    char = edge_map[(r, g, b)]
-                    char = '.'
-                    ansi_color = rgb_to_ansi(pixel[0], pixel[1], pixel[2])
-                    ansi_color = rgb_to_ansi(0, 0, 0)
-                    #ansi_color = rgb_to_ansi(255, 255, 255)
-
-
-
-
-
-
-
-                #char = '█'
-
-                self.stdscr.addch(y, x, char, curses.color_pair(ansi_color))
-
-        progress = frame_number / total_frames
-        progress = int(progress * target_width)
-        for x in range(progress):
-            self.stdscr.addch(target_height-1, x, '█', curses.color_pair(196))
-
-        self.stdscr.refresh()
-
-
     def run(self):
         while not self.stop_flag.is_set():
             logger.info("TerminalScreenActive")
@@ -1146,12 +660,6 @@ class TerminalScreen(threading.Thread):
                 
 
                 self.render(image, f_num, t_frames)
-                #if args.ascii:
-                #    self.ascii_render(image, f_num, t_frames)
-                #elif args.dither:
-                #    self.dithered_render(image, f_num, t_frames)
-                #else:
-                #    self.block_render(image, f_num, t_frames)
 
                 self.input_queue.task_done()
             except queue.Empty:
